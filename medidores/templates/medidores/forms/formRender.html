@@ -1,0 +1,42 @@
+<div class="mb-2">
+    {% block message %}{{ message }}{% endblock message %}
+</div>
+
+{% if form %}
+    <div class="row">
+        {% for field in form.hidden_fields %}
+            {{ field }}
+        {% endfor %}
+        {% for field in form.visible_fields %}
+            {% if field.field.widget.attrs.separator %}
+                <div class="col-12 mb-3" id="fieldset_separator_{{ field.name }}">
+                    <div class="alert alert-primary" role="alert" style="font-size:0.9rem; padding: 5px 20px; margin-bottom: 4px">
+                        {{ field.field.widget.attrs.separator }}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if field.field.widget.attrs.labelwidth %}
+                <div class="mb-3 col-md-{{field.field.widget.attrs.labelwidth}}" style="display:flex" id="fieldset_{{ field.name }}">
+            {% else %}
+                <div class="mb-3 col-md-12" style="display:flex" id="fieldset_{{ field.name }}">
+            {% endif %}
+                    <div class="row w-100">
+                        <div class="col-md-4 col-lg-4">
+                            <label style="font-weight: 500;" class="form-label form-label-text w-100">{{ field.label }}:</label>
+                        </div>
+                        <div class="col-md-8 col-lg-8">
+                            {% include 'medidores/forms/fieldRender.html' %}
+                        </div>
+                    </div>
+                </div> 
+        {% endfor %}
+    </div>
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger mt-3" id="error_{{ field.name }}">
+            {% for error in form.non_field_errors %}
+                {{ error }}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endif %}

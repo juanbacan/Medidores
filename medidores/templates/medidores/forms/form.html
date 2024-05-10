@@ -1,0 +1,191 @@
+{% comment %} {% block %} {% endcomment %}
+{% if formsets %}
+    {% comment %} <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script> {% endcomment %}
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function() {
+            {% for formset in formsets %}
+                const formsetTemplate{{ formset.prefix }}= $('#formset-template-{{ formset.prefix }}').html();
+                const formsetTable{{ formset.prefix }} = $('#formset-table-{{ formset.prefix }}');
+                let formsetCounter{{ formset.prefix }} = formsetTable{{ formset.prefix }}.find('tbody tr').length;
+                let formsetAddButton{{ formset.prefix }} = $('#add-row-{{ formset.prefix }}');
+
+                const minNum{{ formset.prefix }} = $('#id_{{ formset.prefix }}-MIN_NUM_FORMS').val();
+                const maxNUm{{ formset.prefix }} = $('#id_{{ formset.prefix }}-MAX_NUM_FORMS').val();
+
+                formsetAddButton{{ formset.prefix }}.on('click', function(e) {
+                    e.preventDefault();
+
+                    if (formsetCounter{{ formset.prefix }} >= maxNUm{{ formset.prefix }}) {
+                        showErrorMessage(mensaje='El máximo número de categorias que se puede agregar son 8', titulo="No se pueden agregar más registros");
+                        return;
+                    }
+
+                    let newRow = formsetTemplate{{ formset.prefix }}.replace(/__prefix__/g, formsetCounter{{ formset.prefix }});
+                    formsetTable{{ formset.prefix }}.find('tbody').append(newRow);
+                    formsetCounter{{ formset.prefix }}++;
+                    $("#id_{{ formset.prefix }}-TOTAL_FORMS").val(formsetCounter{{ formset.prefix }});
+                    {% if draggable %}
+                        const tbody = document.getElementById('tbody-{{ formset.prefix }}');
+                        setOrder(tbody.id);
+                    {% endif %}
+                    /*tinymce?.init({
+                        selector: `${idNewEditor}`,
+                        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
+                        toolbar_mode: 'floating',
+                    });*/
+                });
+
+                formsetTable{{ formset.prefix }}.on('click', '.delete-row', function(e) {
+                    e.preventDefault();
+
+                    if (formsetCounter{{ formset.prefix }} <= minNum{{ formset.prefix }}) {
+                        showErrorMessage(mensaje='Debe haber al menos una categoria en el simulador', titulo="No se pueden eliminar más registros");
+                        return;
+                    }
+
+                    $(this).closest('tr').remove();
+                    formsetCounter{{ formset.prefix }}--;
+                    $("#id_{{ formset.prefix }}-TOTAL_FORMS").val(formsetCounter{{ formset.prefix }});
+                    {% if draggable %}
+                        const tbody = document.getElementById('tbody-{{ formset.prefix }}');
+                        setOrder(tbody.id);
+                    {% endif %}
+                });
+            {% endfor %}
+        });
+    </script>
+
+    {% if select2 %}
+        {% comment %} <link href="/static/admin/css/vendor/select2/select2.css" media="screen" rel="stylesheet"> {% endcomment %}
+        {% comment %} <link href="/static/admin/css/autocomplete.css" media="screen" rel="stylesheet"> {% endcomment %}
+        <link href="/static/autocomplete_light/select2.css" media="screen" rel="stylesheet">
+        <script src="/static/admin/js/vendor/select2/select2.full.js"></script>
+        <script src="/static/autocomplete_light/i18n/es.js"></script>
+        {% comment %} <script src="/static/autocomplete_light/autocomplete_light.js"></script> {% endcomment %}
+        {% comment %} <script src="/static/autocomplete_light/select2.js"></script> {% endcomment %}
+    {% endif %}
+
+{% endif %}
+
+<div>
+    {{ form.media }}
+    {% block formextra %}{% endblock formextra %}
+    {% include 'medidores/forms/formRender.html' %}
+    {% block formsuffix %}{% endblock formsuffix %}
+
+    {% if formsets %}
+        {% for formset in formsets %}
+            {{ formset.media }}
+            {{ formset.management_form }}
+
+            {% comment %} Put the title of the formset {% endcomment %}
+            <div class="alert alert-primary" role="alert" style="font-size:0.9rem; padding: 5px 20px; margin-bottom: 4px">
+                {{ formset.title }}
+                <h5 class="my-1">{{ formset.prefix }}</h5>
+            </div>
+
+            <script type="text/html" id="formset-template-{{ formset.prefix }}">
+                <tr id="{{ formset.prefix }}-__prefix__">
+                    {% for fields in formset.empty_form.hidden_fields %}
+                        {{ fields }}
+                    {% endfor %}
+                    {% for fields in formset.empty_form.visible_fields %}
+                        {% if draggable %}
+                            <td {% if forloop.counter == 1 %}class="d-flex align-items-center gap-2"{% endif %}>
+                                {% if forloop.counter == 1 %}
+                                    <i class="handle fa-solid fa-up-down-left-right"></i>
+                                {% endif %}
+                                {{ fields }}
+                            </td>
+                        {% else %}
+                            <td>{{ fields }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    <td><a href="#" class="delete-row">
+                        <i class="fa-solid fa-circle-xmark" style="color: #888;"></i>
+                    </a></td>
+                </tr>
+            </script>
+
+            <div class="card mb-4">
+                <div class="table-responsive">
+                    <table data-sortable class="table table-bordered table-striped table-hover" id="formset-table-{{ formset.prefix }}">
+                        <thead>
+                            <tr style="vertical-align: middle;">
+                                {% for fields in formset.empty_form.visible_fields %}
+                                    <th id="col-{{ formset.prefix }}-{{ fields.name }}" style="font-size: 14px;">{{ fields.label }}</th>
+                                {% endfor %}
+                                <th id="col-{{ formset.prefix }}-DELETE" style="font-size: 14px;">¿Eliminar?</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-{{ formset.prefix }}">
+                            {% for form in formset %}
+                                {{ forms.management_form }}
+                                <tr id="{{ formset.prefix }}-{{ forloop.counter0 }}">
+                                    {% for fields in form.hidden_fields %}
+                                        {{ fields }}
+                                    {% endfor %}
+                                    {% for fields in form.visible_fields %}
+                                        {% if draggable %}
+                                            <td>
+                                                <div {% if forloop.counter == 1 %}class="d-flex align-items-center gap-2"{% endif %}>
+                                                    {% if forloop.counter == 1 %}
+                                                        <i class="handle fa-solid fa-up-down-left-right"></i>
+                                                    {% endif %}
+                                                    {{ fields }}
+                                                </div>
+                                                {% if fields.errors %}
+                                                    {% for error in fields.errors %}
+                                                        <div class="text-danger small fw-bold">{{ error }}</div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td>
+                                                {{ fields }}
+                                                {% comment %} Errors {% endcomment %}
+                                                {% if fields.errors %}
+                                                    {% for error in fields.errors %}
+                                                        <div class="text-danger small fw-bold">{{ error }}</div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <td>
+                                        <a href="#" class="delete-row">
+                                            <i class="fa-solid fa-circle-xmark" style="color: #888;"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-primary btn-sm" id="add-row-{{ formset.prefix }}">
+                        <i class="fa-solid fa-plus"></i>
+                        Agregar {{ formset.title }} adicional
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<style>
+    label {
+        width: 112px;
+        display: inline-block;
+        text-align: right;
+        margin-right: 40px;
+        {% comment %} font-size: 0.8em; {% endcomment %}
+        line-height: 1;
+        font-weight: bold;
+    } 
+</style>
+
+
+
+

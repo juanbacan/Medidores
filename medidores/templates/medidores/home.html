@@ -1,0 +1,32 @@
+{% extends 'medidores/layout.html' %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="text-center mt-3">Bienvenido a Medidores</h1>
+            </div>
+            {% for medidor in medidores %}
+                <div class="col-md-4">
+                    <div class="card my-3">
+                        <div class="card-header">
+                            <h3 class="mb-0">{{ medidor.numero_medidor }}</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Dirección: {{ medidor.direccion }}</p>
+                            <p>Tipo de Consumo: {{ medidor.get_tipo_consumo_display }}</p>
+                            <p>Meses de Deuda: {{ medidor.meses_deuda }}</p>
+                            <p>Consumo: {{ medidor.consumo }}</p>
+                            <p>Valor Mes: {{ medidor.valor_mes }}</p>
+                            <p class="mb-0">Total Deuda: {{ medidor.total_deuda }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-md-12">
+                    <p class="text-center mt-5">No hay medidores registrados</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
